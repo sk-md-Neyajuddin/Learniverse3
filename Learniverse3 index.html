@@ -1,0 +1,329 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learniverse2</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial;background:linear-gradient(135deg,#dbeafe,#f3e8ff);color:#24234b;text-align:center}
+header{background:#5145cd;color:white;padding:25px 12px}
+header h1{font-size:32px;margin:0}
+.container{max-width:520px;background:white;margin:22px auto;padding:22px;border-radius:20px;box-shadow:0 5px 22px #5553}
+select,button{width:100%;padding:14px;margin:8px 0;border:0;border-radius:11px;font-size:16px}
+select{background:#eeeaff;color:#28234b}
+button{background:#5145cd;color:white;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5}
+.option{background:#eeeaff;color:#24234b;text-align:left}
+.option:disabled{opacity:1}
+#question{font-size:21px;font-weight:bold;line-height:1.5}
+#message{font-weight:bold}
+#progress{color:#5145cd;font-weight:bold}
+.bar{height:9px;background:#eee;border-radius:20px;overflow:hidden}
+#fill{height:100%;background:#5145cd;width:0%}
+.small{color:#777;font-size:13px}
+footer{padding:20px}
+</style>
+</head>
+<body>
+
+<header>
+<h1>🌍 Learniverse2</h1>
+<p>Play Smart. Learn More. Grow Every Day!</p>
+</header>
+
+<div class="container">
+<h2>🎮 Welcome to Quiz World!</h2>
+<p>Select your class and subject.</p>
+
+<select id="grade">
+<option>Nursery</option>
+<option>LKG</option>
+<option>UKG</option>
+<option>Class 1</option>
+<option>Class 2</option>
+<option>Class 3</option>
+<option>Class 4</option>
+<option>Class 5</option>
+</select>
+
+<select id="subject">
+<option value="Mixed">🌟 Mixed Quiz - All Subjects</option>
+<option value="Maths">📐 Mathematics</option>
+<option value="English">📖 English</option>
+<option value="Science">🔬 Science / EVS</option>
+<option value="GK">🌍 General Knowledge</option>
+</select>
+
+<p id="bankInfo" class="small">200 questions available for each class.</p>
+<button onclick="startQuiz()">Start Quiz 🚀</button>
+<button onclick="resetCycle()" style="background:#777">Start New Question Cycle ↻</button>
+
+<div id="quiz" hidden>
+<hr>
+<p id="progress"></p>
+<div class="bar"><div id="fill"></div></div>
+<p id="question"></p>
+<div id="options"></div>
+<p id="message"></p>
+<p id="score">⭐ Score: 0</p>
+<button id="next" onclick="nextQuestion()" hidden>Next Question ➜</button>
+</div>
+
+<div id="result" hidden>
+<h2>🎉 Round Completed!</h2>
+<h1 id="finalScore"></h1>
+<p id="resultMessage"></p>
+<button onclick="startQuiz()">Next Round 🚀</button>
+</div>
+</div>
+
+<footer>
+<p>❤️ Made with Learniverse2</p>
+<p>Learning is an adventure!</p>
+</footer>
+
+<script>
+// QUESTION BANK: 200 questions for every class.
+// 50 Maths + 50 English + 50 Science + 50 GK.
+
+const vocab=[
+["Happy","Feeling joy","Sad"],
+["Big","Large in size","Small"],
+["Fast","Moving quickly","Slow"],
+["Brave","Showing courage","Afraid"],
+["Beautiful","Pleasant to look at","Ugly"],
+["Begin","To start","End"],
+["Easy","Not difficult","Hard"],
+["Quiet","Making little noise","Noisy"],
+["Rich","Having much money","Poor"],
+["Kind","Being helpful and caring","Cruel"]
+];
+
+const science=[
+["Which part of a plant absorbs water?","Roots",["Leaves","Flower","Stem"]],
+["Which star gives Earth light?","The Sun",["The Moon","Mars","Venus"]],
+["Which organ helps us breathe?","Lungs",["Heart","Stomach","Brain"]],
+["What do bees collect from flowers?","Nectar",["Sand","Water","Leaves"]],
+["Which animal gives us wool?","Sheep",["Lion","Tiger","Dog"]],
+["What is frozen water called?","Ice",["Steam","Rain","Cloud"]],
+["Which sense organ helps us hear?","Ears",["Eyes","Nose","Tongue"]],
+["What do plants need to grow?","Sunlight",["Plastic","Smoke","Glass"]],
+["Which animal lives in water?","Fish",["Camel","Horse","Cat"]],
+["Which body part pumps blood?","Heart",["Lungs","Brain","Kidney"]]
+];
+
+const gk=[
+["What is the capital of India?","New Delhi",["Mumbai","Kolkata","Chennai"]],
+["What is the national bird of India?","Peacock",["Parrot","Crow","Eagle"]],
+["What is the national animal of India?","Tiger",["Lion","Elephant","Deer"]],
+["Which planet is called the Red Planet?","Mars",["Earth","Venus","Jupiter"]],
+["How many days are in a week?","7",["5","6","8"]],
+["Which is the largest ocean?","Pacific Ocean",["Indian Ocean","Arctic Ocean","Atlantic Ocean"]],
+["Which festival is known as the festival of lights?","Diwali",["Holi","Eid","Christmas"]],
+["What is the currency of India?","Rupee",["Dollar","Euro","Yen"]],
+["Which animal is called the ship of the desert?","Camel",["Horse","Elephant","Donkey"]],
+["How many colours are in a rainbow?","7",["5","6","8"]]
+];
+
+const bank={};
+const classes=["Nursery","LKG","UKG","Class 1","Class 2","Class 3","Class 4","Class 5"];
+
+function addQuestion(arr,id,subject,question,answer,wrong){
+  const choices=[answer,...wrong].sort(()=>Math.random()-.5);
+  arr.push({id,subject,question,answer,choices});
+}
+
+function makeMath(level,arr){
+  for(let i=0;i<50;i++){
+    let a,b,ans,sign;
+    let max=[5,10,20,20,50,100,500,1000][level];
+    let type=i%4;
+
+    if(type===0){
+      a=1+(i*3)%max;b=1+(i*2+1)%max;
+      ans=a+b;sign="+";
+    }else if(type===1){
+      a=2+(i*4)%max;b=1+(i*2)%Math.max(2,a);
+      if(b>=a)b=a-1;
+      ans=a-b;sign="−";
+    }else if(type===2){
+      a=1+(i%12);b=1+(Math.floor(i/2)%10);
+      if(level>=5){a+=level;b+=level%3;}
+      ans=a*b;sign="×";
+    }else{
+      b=1+(i%10);ans=1+(Math.floor(i/4)%12);
+      a=b*ans;sign="÷";
+    }
+
+    if(level<=2 && type>=2){
+      a=1+(i%5);b=1+(Math.floor(i/3)%5);
+      ans=a+b;sign="+";
+    }
+    const question=`What is ${a} ${sign} ${b}?`;
+    const wrong=[ans+1,Math.max(0,ans-1),ans+2].map(String);
+    addQuestion(arr,"M"+i,"Maths",question,String(ans),wrong);
+  }
+}
+
+function makeEnglish(arr){
+  vocab.forEach((v,i)=>{
+    const [word,meaning,opposite]=v;
+    const variants=[
+      [`Which word means "${meaning}"?`,word,[vocab[(i+1)%10][0],vocab[(i+2)%10][0],vocab[(i+3)%10][0]]],
+      [`Choose the synonym of "${word}".`,meaning,[vocab[(i+1)%10][1],vocab[(i+2)%10][1],vocab[(i+3)%10][1]]],
+      [`What is the opposite of "${word}"?`,opposite,[vocab[(i+1)%10][2],vocab[(i+2)%10][2],vocab[(i+3)%10][2]]],
+      [`"${word}" means which of these?`,meaning,[vocab[(i+4)%10][1],vocab[(i+5)%10][1],vocab[(i+6)%10][1]]],
+      [`Select the correct meaning of "${word}".`,meaning,[vocab[(i+7)%10][1],vocab[(i+8)%10][1],vocab[(i+9)%10][1]]]
+    ];
+    variants.forEach((v,j)=>addQuestion(arr,"E"+(i*5+j),"English",v[0],v[1],v[2]));
+  });
+}
+
+function makeFacts(arr,data,subject,prefix){
+  data.forEach((v,i)=>{
+    const [question,answer,wrong]=v;
+    const variants=[
+      question,
+      "Choose the correct answer: "+question,
+      "Test your knowledge! "+question,
+      "Which option is correct? "+question,
+      "Can you answer this? "+question
+    ];
+    variants.forEach((q,j)=>{
+      addQuestion(arr,prefix+(i*5+j),subject,q,answer,wrong);
+    });
+  });
+}
+
+classes.forEach((grade,level)=>{
+  let arr=[];
+  makeMath(level,arr);
+  makeEnglish(arr);
+  makeFacts(arr,science,"Science","S");
+  makeFacts(arr,gk,"GK","G");
+  bank[grade]=arr;
+});
+
+// Used question history stays saved after refresh.
+const STORAGE="learniverse2_used_v2";
+let history=JSON.parse(localStorage.getItem(STORAGE)||"{}");
+let round=[],index=0,score=0,answered=false;
+let currentGrade="",currentSubject="";
+
+function saveHistory(){
+  localStorage.setItem(STORAGE,JSON.stringify(history));
+}
+
+function getUsed(){
+  return history[currentGrade]||(history[currentGrade]=[]);
+}
+
+function updateInfo(){
+  const grade=document.getElementById("grade").value;
+  const used=history[grade]||[];
+  document.getElementById("bankInfo").textContent=
+    (200-used.length)+" of 200 questions not yet used in "+grade+".";
+}
+document.getElementById("grade").onchange=updateInfo;
+
+function startQuiz(){
+  currentGrade=document.getElementById("grade").value;
+  currentSubject=document.getElementById("subject").value;
+  const used=getUsed();
+  let available=bank[currentGrade].filter(q=>
+    !used.includes(q.id)&&
+    (currentSubject==="Mixed"||q.subject===currentSubject)
+  );
+
+  if(available.length<10){
+    alert("There are fewer than 10 unused questions left in this selection. Choose Mixed Quiz or finish the remaining questions before starting another round.");
+    updateInfo();
+    return;
+  }
+
+  available.sort(()=>Math.random()-.5);
+  round=available.slice(0,10);
+
+  // Mark questions as used immediately, so refreshing cannot repeat them.
+  round.forEach(q=>used.push(q.id));
+  saveHistory();
+
+  index=0;score=0;
+  document.getElementById("quiz").hidden=false;
+  document.getElementById("result").hidden=true;
+  showQuestion();
+  updateInfo();
+}
+
+function showQuestion(){
+  answered=false;
+  let q=round[index];
+  document.getElementById("progress").textContent=
+    "Question "+(index+1)+" / 10  •  "+q.subject;
+  document.getElementById("fill").style.width=((index+1)*10)+"%";
+  document.getElementById("question").textContent=q.question;
+  document.getElementById("message").textContent="";
+  document.getElementById("score").textContent="⭐ Score: "+score;
+  document.getElementById("next").hidden=true;
+
+  let area=document.getElementById("options");
+  area.innerHTML="";
+  q.choices.forEach(option=>{
+    let btn=document.createElement("button");
+    btn.textContent=option;
+    btn.className="option";
+    btn.onclick=()=>checkAnswer(option);
+    area.appendChild(btn);
+  });
+}
+
+function checkAnswer(answer){
+  if(answered)return;
+  answered=true;
+  let q=round[index];
+  let correct=answer===q.answer;
+  if(correct){
+    score++;
+    document.getElementById("message").textContent="🎉 Correct! Well done!";
+  }else{
+    document.getElementById("message").textContent=
+      "Good try! Correct answer: "+q.answer;
+  }
+  document.getElementById("score").textContent="⭐ Score: "+score;
+  document.querySelectorAll(".option").forEach(btn=>{
+    btn.disabled=true;
+    if(btn.textContent===q.answer)btn.style.background="#b9f6ca";
+    else if(btn.textContent===answer)btn.style.background="#ffcdd2";
+  });
+  document.getElementById("next").hidden=false;
+}
+
+function nextQuestion(){
+  index++;
+  if(index<10){
+    showQuestion();
+  }else{
+    document.getElementById("quiz").hidden=true;
+    document.getElementById("result").hidden=false;
+    document.getElementById("finalScore").textContent=score+"/10";
+    document.getElementById("resultMessage").textContent=
+      score>=8?"Excellent work! 🌟":
+      score>=5?"Good job! Keep learning!":"Keep practising! You can do it!";
+  }
+}
+
+function resetCycle(){
+  if(confirm("Start a new cycle? Previously used questions will become available again.")){
+    delete history[document.getElementById("grade").value];
+    saveHistory();
+    updateInfo();
+    alert("New question cycle started!");
+  }
+}
+updateInfo();
+</script>
+</body>
+  </html>
+  
